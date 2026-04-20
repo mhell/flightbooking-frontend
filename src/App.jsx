@@ -1,103 +1,148 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { flightBookingService } from "./services/FlightBookingService";
 
+const welcomeMsg = "Hello. How can I assist you with your flight reservations today?";
+
 function App() {
   const [chatId] = useState(`chat-${nanoid()}`);
-  const [chatMessages, setChatMessages] = useState([]);
+  const [chatMessages, setChatMessages] = useState([{role: "ai", text: welcomeMsg}]);
   const [bookedFlight, setBookedFlight] = useState(null);
   const [flights, setFlights] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatWindow = useRef(null);
 
-  const sendChat = async (message) => {
+  useEffect(() => {
+    chatWindow.current.scrollTop = chatWindow.current.scrollHeight
+  }, [chatMessages]);
+
+  const handleChat = async (message) => {
+    let newChat = [];
+    if (message) {
+      newChat.push({ role: "user", text: message });
+      setChatMessages([...chatMessages, ...newChat]);
+    }
+    setIsLoading(true);
     const response = await flightBookingService.chat(chatId, message);
-    console.log(JSON.stringify(response));
-  }
+    if (response?.chatResponse) {
+      newChat.push({ role: "ai", text: response.chatResponse })
+      setChatMessages([...chatMessages, ...newChat]);
+    }
+    if (response?.bookedFlight) {
+      setBookedFlight(response.bookedFlight);
+    }
+    if (response?.flights.length) {
+      setFlights(response.flights);
+    }
+    setIsLoading(false);
+  };
 
   return (
-    <div className="container pt-4">
+    <div className="container-fluid py-4">
       {/* Header */}
       <div className="text-center mb-4">
         <h2>✈️ Flight Reservation Assistant</h2>
       </div>
-
       <div className="row g-4">
         {/* Left Panel (Chat) */}
-        <div className="col-md-7 offset-lg-2">
-          <Chat onSubmit={sendChat} />
+        <div className="col-lg-8 col-xl-6 offlset-lg-2 offset-xl-3">
+          <Chat chatMessages={chatMessages} onSubmit={handleChat} reference={chatWindow} isLoading={isLoading} />
         </div>
-
         {/* Confirmed Booking */}
-        <div className="col-md-3 overflow-scroll">
-          <Booking />
-        </div>
-      </div>
-
-      <div className="row py-4">
-        <div className="col-md-7 offset-lg-2">
+        <div className="col-lg-4 col-xl-3 overflow-scroll">{bookedFlight && <Booking booking={bookedFlight} />}</div>
+        <div className="col-lg-8 col-xl-6 offlset-lg-2 offset-xl-3">
           {/* Available Flights */}
-          <Flights />
+          {flights?.length > 0 && <Flights flights={flights} />}
         </div>
       </div>
     </div>
   );
 }
 
-const Chat = ({onSubmit}) => {
+const Chat = ({ chatMessages, onSubmit, reference, isLoading }) => {
   const [chatInput, setChatInput] = useState("");
+
+  const handleForm = (event) => {
+    event.preventDefault();
+    onSubmit(chatInput);
+    setChatInput("");
+  }
 
   return (
     <div className="card">
       <div className="card-body d-flex flex-column">
-        <div className="chat-box mb-3 rounded border p-3">
-          <div className="message user-message rounded-4">Show me available flights.</div>
-          <div className="message bot-message rounded-4">Here are the available flights for you:</div>
+        <div className="chat-box rounded border overflow-auto p-3" ref={reference}>
+          {chatMessages.map((message, index) => (
+            <ChatBubble role={message.role} text={message.text} key={index} />
+          ))}
+          {isLoading && <div className="message opacity-100 rounded-4"><span className="loader"></span></div>}
         </div>
-        <div className="input-group">
-          <input type="text" className="form-control" placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)}/>
-          <button className="btn btn-primary" onClick={() => onSubmit(chatInput)}>Send</button>
-        </div>
+          <form>
+            <div className="input-group">
+              <input type="text" className="form-control" placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} />
+              <button className="btn btn-primary" onClick={handleForm}>
+                Send
+              </button>
+            </div>
+          </form>
       </div>
     </div>
   );
 };
 
-const Booking = () => {
+const ChatBubble = ({ role, text }) => {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    node.style.opacity = 1;
+    return () => {
+      node.style.opacity = 0;
+    };
+  }, []);
+  
   return (
-    <div className="card">
+    <div className={`message rounded-4 ${role === "user" && "text-bg-primary ms-auto"}`} ref={ref}>{text}</div>
+  );
+}
+
+const Booking = ({ booking }) => {
+  return (
+    <div className="booking card">
       <div className="card-header fw-bold">Confirmed Booking</div>
       <div className="card-body">
         <p>
-          <strong>Flight ID:</strong> 178
+          <strong>Flight ID:</strong> {booking?.id}
         </p>
         <p>
-          <strong>Flight Number:</strong> FL-102
+          <strong>Flight Number:</strong> {booking?.flightNumber}
         </p>
         <p>
-          <strong>Passenger:</strong> John Doe
+          <strong>Passenger:</strong> {booking?.passengerName}
         </p>
         <p>
-          <strong>Email:</strong> john.doe@email.com
+          <strong>Email:</strong> {booking?.passengerEmail}
         </p>
         <p>
-          <strong>Departure:</strong> 10:00 AM
+          <strong>Departure:</strong> {dateFormat(booking?.departureTime)}
         </p>
         <p>
-          <strong>Arrival:</strong> 1:00 PM
+          <strong>Arrival:</strong> {dateFormat(booking?.arrivalTime)}
         </p>
         <p>
-          <strong>Destination:</strong> New York
+          <strong>Destination:</strong> {booking?.destination}
         </p>
         <p>
-          <strong>Price:</strong> $300
+          <strong>Price:</strong> ${booking?.price}
         </p>
       </div>
     </div>
   );
 };
 
-const Flights = () => {
+const Flights = ({ flights }) => {
   return (
-    <div className="card">
+    <div className="card small">
       <div className="card-header fw-bold">Flights</div>
       <div className="card-body">
         <div className="table-responsive">
@@ -109,33 +154,26 @@ const Flights = () => {
                 <th>Destination</th>
                 <th>Departure</th>
                 <th>Arrival</th>
-                <th>Status</th>
+                {flights[0].status && <th>Status</th>}
                 <th>Price</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>245</td>
-                <td>FL-102</td>
-                <td>New York</td>
-                <td>10:00 AM</td>
-                <td>1:00 PM</td>
-                <td>
-                  <span className="badge bg-success">Available</span>
-                </td>
-                <td>$300</td>
-              </tr>
-              <tr>
-                <td>312</td>
-                <td>FL-205</td>
-                <td>Los Angeles</td>
-                <td>2:30 PM</td>
-                <td>5:15 PM</td>
-                <td>
-                  <span className="badge bg-success">Available</span>
-                </td>
-                <td>$450</td>
-              </tr>
+              {flights?.map((flight) => (
+                <tr key={flight.id}>
+                  <td>{flight.id}</td>
+                  <td>{flight.flightNumber}</td>
+                  <td>{flight.destination}</td>
+                  <td>{dateFormat(flight.departureTime)}</td>
+                  <td>{dateFormat(flight.arrivalTime)}</td>
+                  {flight.status &&
+                    <td>
+                      <span className={`badge ${flight.status === "AVAILABLE" ? "bg-success" : "bg-warning"}`}>{flight.status}</span>
+                    </td>
+                  }
+                  <td>${flight.price}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -143,5 +181,9 @@ const Flights = () => {
     </div>
   );
 };
+
+function dateFormat(dateStr) {
+  return dateStr?.slice(0, 16).replace("T", " ");
+}
 
 export default App;

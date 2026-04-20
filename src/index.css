@@ -2,22 +2,53 @@ body {
   background-color: var(--bs-gray-100);
 }
 
+.container-fluid {
+  max-width: 1600px;
+}
+
 .chat-box {
-  height: 500px;
+  height: 400px;
 }
 
 .message {
   max-width: 75%;
   padding: 10px 15px;
-  margin-bottom: 10px;
-}
-
-.user-message {
-  background-color: #0d6efd;
-  color: white;
-  margin-left: auto;
-}
-
-.bot-message {
+  margin-bottom: 11px;
   background-color: #e9ecef;
+  opacity: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.booking p {
+  margin-bottom: .5rem;
+}
+
+.loader {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+  margin: 6px 3rem;
+  position: relative;
+  color: #FFF;
+  box-sizing: border-box;
+  animation: animloader 2s linear infinite;
+}
+
+@keyframes animloader {
+  0% {
+    box-shadow: 15px 0 0 -2px,  44px 0 0 -2px,  -15px 0 0 -2px,  -44px 0 0 -2px;
+  }
+  25% {
+    box-shadow: 15px 0 0 -2px,  44px 0 0 -2px,  -15px 0 0 -2px,  -44px 0 0 2px;
+  }
+  50% {
+    box-shadow: 15px 0 0 -2px,  44px 0 0 -2px,  -15px 0 0 2px,  -44px 0 0 -2px;
+  }
+  75% {
+    box-shadow: 15px 0 0 2px,  44px 0 0 -2px,  -15px 0 0 -2px,  -44px 0 0 -2px;
+  }
+  100% {
+    box-shadow: 15px 0 0 -2px,  44px 0 0 2px,  -15px 0 0 -2px,  -44px 0 0 -2px;
+  }
 }
