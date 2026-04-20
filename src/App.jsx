@@ -1,6 +1,18 @@
 import { useState } from "react";
+import { nanoid } from "nanoid";
+import { flightBookingService } from "./services/FlightBookingService";
 
 function App() {
+  const [chatId] = useState(`chat-${nanoid()}`);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [bookedFlight, setBookedFlight] = useState(null);
+  const [flights, setFlights] = useState([]);
+
+  const sendChat = async (message) => {
+    const response = await flightBookingService.chat(chatId, message);
+    console.log(JSON.stringify(response));
+  }
+
   return (
     <div className="container pt-4">
       {/* Header */}
@@ -11,7 +23,7 @@ function App() {
       <div className="row g-4">
         {/* Left Panel (Chat) */}
         <div className="col-md-7 offset-lg-2">
-          <Chat />
+          <Chat onSubmit={sendChat} />
         </div>
 
         {/* Confirmed Booking */}
@@ -30,7 +42,9 @@ function App() {
   );
 }
 
-const Chat = () => {
+const Chat = ({onSubmit}) => {
+  const [chatInput, setChatInput] = useState("");
+
   return (
     <div className="card">
       <div className="card-body d-flex flex-column">
@@ -38,10 +52,9 @@ const Chat = () => {
           <div className="message user-message rounded-4">Show me available flights.</div>
           <div className="message bot-message rounded-4">Here are the available flights for you:</div>
         </div>
-
         <div className="input-group">
-          <input type="text" className="form-control" placeholder="Type your message..." />
-          <button className="btn btn-primary">Send</button>
+          <input type="text" className="form-control" placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)}/>
+          <button className="btn btn-primary" onClick={() => onSubmit(chatInput)}>Send</button>
         </div>
       </div>
     </div>
@@ -52,7 +65,7 @@ const Booking = () => {
   return (
     <div className="card">
       <div className="card-header fw-bold">Confirmed Booking</div>
-      <div class="card-body">
+      <div className="card-body">
         <p>
           <strong>Flight ID:</strong> 178
         </p>
@@ -87,8 +100,8 @@ const Flights = () => {
     <div className="card">
       <div className="card-header fw-bold">Flights</div>
       <div className="card-body">
-        <div class="table-responsive">
-          <table class="table align-middle">
+        <div className="table-responsive">
+          <table className="table align-middle">
             <thead>
               <tr>
                 <th>Flight ID</th>
@@ -108,7 +121,7 @@ const Flights = () => {
                 <td>10:00 AM</td>
                 <td>1:00 PM</td>
                 <td>
-                  <span class="badge bg-success">Available</span>
+                  <span className="badge bg-success">Available</span>
                 </td>
                 <td>$300</td>
               </tr>
@@ -119,7 +132,7 @@ const Flights = () => {
                 <td>2:30 PM</td>
                 <td>5:15 PM</td>
                 <td>
-                  <span class="badge bg-success">Available</span>
+                  <span className="badge bg-success">Available</span>
                 </td>
                 <td>$450</td>
               </tr>
