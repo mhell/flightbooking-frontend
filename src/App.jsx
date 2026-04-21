@@ -22,18 +22,24 @@ function App() {
       newChat.push({ role: "user", text: message });
       setChatMessages([...chatMessages, ...newChat]);
     }
+
     setIsLoading(true);
     const response = await flightBookingService.chat(chatId, message);
+
     if (response?.chatResponse) {
       newChat.push({ role: "ai", text: response.chatResponse })
       setChatMessages([...chatMessages, ...newChat]);
     }
-    if (response?.bookedFlight) {
-      setBookedFlight(response.bookedFlight);
+    if (response?.confirmedBooking) {
+      setBookedFlight(response.confirmedBooking);
+    }
+    if (response?.confirmedCancelledFlightId === bookedFlight?.id) {
+      setBookedFlight(null);
     }
     if (response?.flights.length) {
       setFlights(response.flights);
     }
+
     setIsLoading(false);
   };
 
