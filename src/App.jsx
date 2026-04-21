@@ -5,7 +5,7 @@ import { flightBookingService } from "./services/FlightBookingService";
 const welcomeMsg = "Hello. How can I assist you with your flight reservations today?";
 
 function App() {
-  const [chatId] = useState(`chat-${nanoid()}`);
+  const [chatId] = useState(nanoid());
   const [chatMessages, setChatMessages] = useState([{role: "ai", text: welcomeMsg}]);
   const [bookedFlight, setBookedFlight] = useState(null);
   const [flights, setFlights] = useState([]);
@@ -71,7 +71,7 @@ const Chat = ({ chatMessages, onSubmit, reference, isLoading }) => {
   return (
     <div className="card">
       <div className="card-body d-flex flex-column">
-        <div className="chat-box rounded border overflow-auto p-3" ref={reference}>
+        <div className="chat-box rounded border overflow-auto p-3 mb-3" ref={reference}>
           {chatMessages.map((message, index) => (
             <ChatBubble role={message.role} text={message.text} key={index} />
           ))}
